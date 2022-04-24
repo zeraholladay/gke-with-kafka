@@ -1,0 +1,16 @@
+version: '2'
+services:
+  zookeeper:
+    image: ubuntu/zookeeper:edge
+    ports:
+      - 2181:2181
+  
+  kafka:
+    image: ubuntu/kafka:3.1-22.04_beta
+    depends_on:
+      - zookeeper
+    ports:
+      - 9092:9092
+    environment:
+      ZOOKEEPER_HOST: host.docker.internal
+      ZOOKEEPER_PORT: 2181

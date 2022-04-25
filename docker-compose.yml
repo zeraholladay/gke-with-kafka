@@ -1,4 +1,4 @@
-version: '2'
+version: '3.1'
 services:
   zookeeper:
     image: ubuntu/zookeeper:edge
@@ -28,7 +28,7 @@ services:
       DJANGO_SECRET_KEY: abc
 
   djangoweb:
-    image: kafka-manger:latest
+    build: .
     container_name: kafka-manager
     extra_hosts:
       - "apihost:127.0.0.1"

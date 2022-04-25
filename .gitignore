@@ -1,3 +1,4 @@
 bin/*
 lib/*
 pyvenv.cfg
+kafka_manager/__pycache__/*

@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 from pathlib import Path
+from os import getenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -75,8 +76,12 @@ WSGI_APPLICATION = 'kafka_manager.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE':   'django.db.backends.postgresql',
+        'NAME':     getenv('DATABASE_NAME', 'postgres'),
+        'USER':     getenv('DATABASE_USER', 'postgres'),
+        'PASSWORD': getenv('DATABASE_PASSWORD'),
+        'HOST':     getenv('DATABASE_HOST', 'localhost'),
+        'PORT':     getenv('DATABASE_PORT', 5432)
     }
 }
 

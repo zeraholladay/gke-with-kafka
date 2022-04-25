@@ -2,11 +2,13 @@ version: '2'
 services:
   zookeeper:
     image: ubuntu/zookeeper:edge
+    container_name: kafka-zk
     ports:
       - 2181:2181
   
   kafka:
     image: ubuntu/kafka:3.1-22.04_beta
+    container_name: kafka
     depends_on:
       - zookeeper
     ports:
@@ -16,9 +18,11 @@ services:
       ZOOKEEPER_PORT: 2181
 
   django_db:
-    image: postgres:latest
+    image: postgres:12
     restart: always
     container_name: kafka-manager-db
+    ports:
+      - 5432:5432
     environment:
       POSTGRES_PASSWORD: local_development_only
       DJANGO_SECRET_KEY: abc

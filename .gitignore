@@ -1,4 +1,5 @@
 bin/*
 lib/*
 pyvenv.cfg
-kafka_manager/__pycache__/*
+kafka_manager*/__pycache__/*
+kafka_manager_app/migrations/__pycache__/*

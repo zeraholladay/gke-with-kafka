@@ -5,19 +5,19 @@ clean:
 	docker-compose down -v
 
 force_clean:
-	docker stop kafka-manager kafka-manager-db kafka kafka-zk | xargs docker rm
+	docker stop kafka-manager_djangoweb kafka-manager-db kafka kafka-zk | xargs docker rm
 
 test:
-	docker exec -it kafka-manager bash -c "cd /code && coverage run --source='.' manage.py test --parallel && coverage combine && coverage report || rm -f .coverage.*"
+	docker exec -it kafka-manager_djangoweb bash -c "cd /code && coverage run --source='.' manage.py test --parallel && coverage combine && coverage report || rm -f .coverage.*"
 
 makemigrations:
-	docker exec -it kafka-manager bash -c "cd /code && python3 manage.py makemigrations kafka_manager_app"
+	docker exec -it kafka-manager_djangoweb bash -c "cd /code && python3 manage.py makemigrations kafka_manager_app"
 
 migrate:
-	docker exec -it kafka-manager bash -c "cd /code && python3 manage.py migrate"
+	docker exec -it kafka-manager_djangoweb bash -c "cd /code && python3 manage.py migrate"
 
 createsuperuser:
-	docker exec -it kafka-manager bash -c "cd /code && python3 manage.py createsuperuser"
+	docker exec -it kafka-manager_djangoweb bash -c "cd /code && python3 manage.py createsuperuser"
 
 clear_docker_space:
 	docker volume ls -qf dangling=true | xargs docker volume rm || true

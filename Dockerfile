@@ -10,6 +10,7 @@ RUN mkdir /code
 
 COPY *.py /code/
 COPY kafka_manager /code/kafka_manager
+COPY kafka_manager_app /code/kafka_manager_app
 COPY ./requirements.txt /code/
 COPY ./dev_requirements.txt /code/
 

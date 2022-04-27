@@ -1,4 +1,5 @@
 import os
+from unicodedata import name
 import kafka
 from celery import Celery
 from celery.utils.log import get_task_logger
@@ -21,10 +22,10 @@ app.autodiscover_tasks()
 
 @app.task(bind=True)
 def find_topics_by_bootstrap_servers(self):
-    from .models import KafkaBootstrapSevers
+    from .models import KafkaBootstrapSevers, KafkaTopics
 
-    for boostrap_servers in KafkaBootstrapSevers.objects.all():
-        server = boostrap_servers.bootstrap_servers
+    for bootstrap_servers in KafkaBootstrapSevers.objects.all():
+        server = bootstrap_servers.bootstrap_servers
         consumer = kafka.KafkaConsumer(bootstrap_servers=[server])
-        topics = consumer.topics()
-        logger.info(topics)
+        for topic_name in consumer.topics():
+            kafka_topic, created_boolean = KafkaTopics.objects.get_or_create(topic=topic_name, bootstrap_servers=bootstrap_servers)

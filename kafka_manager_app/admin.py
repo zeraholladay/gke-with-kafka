@@ -1,5 +1,6 @@
 from django.contrib import admin
 
-from .models import KafkaBootstrapSevers
+from .models import *
 
 admin.site.register(KafkaBootstrapSevers)
+admin.site.register(KafkaTopics)

@@ -1,3 +1,4 @@
 kafka_manager_app/migrations/__pycache__/*
 .venv/*
 */__pycache__/
+celerybeat-schedule.db

@@ -1,4 +1,5 @@
 from django.db import models
+from .celery import create_topic
 
 class KafkaBootstrapSevers(models.Model):
     bootstrap_servers = models.CharField(max_length=30)
@@ -9,6 +10,10 @@ class KafkaBootstrapSevers(models.Model):
 class KafkaTopics(models.Model):
     topic = models.CharField(max_length=30)
     bootstrap_servers = models.ForeignKey(KafkaBootstrapSevers, on_delete=models.CASCADE)
+
+    def save(self):
+        super().save()
+        create_topic.delay(self.pk)
 
     class Meta:
         constraints = [

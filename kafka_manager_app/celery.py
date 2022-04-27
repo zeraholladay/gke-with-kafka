@@ -1,6 +1,7 @@
 import os
 from unicodedata import name
 import kafka
+from kafka.admin import KafkaAdminClient, NewTopic
 from celery import Celery
 from celery.utils.log import get_task_logger
 
@@ -29,3 +30,16 @@ def find_topics_by_bootstrap_servers(self):
         consumer = kafka.KafkaConsumer(bootstrap_servers=[server])
         for topic_name in consumer.topics():
             kafka_topic, created_boolean = KafkaTopics.objects.get_or_create(topic=topic_name, bootstrap_servers=bootstrap_servers)
+
+@app.task
+def create_topic(pk):
+    from .models import KafkaBootstrapSevers, KafkaTopics
+    new_kafka_topic_model = KafkaTopics.objects.get(pk=pk)
+
+    admin_client = KafkaAdminClient(
+        bootstrap_servers=new_kafka_topic_model.bootstrap_servers.bootstrap_servers
+    )
+
+    topic_list = []
+    topic_list.append(NewTopic(name=new_kafka_topic_model.topic, num_partitions=1, replication_factor=1))
+    admin_client.create_topics(new_topics=topic_list, validate_only=False)

@@ -17,6 +17,34 @@ services:
       ZOOKEEPER_HOST: host.docker.internal
       ZOOKEEPER_PORT: 2181
 
+  django_redis:
+    image: redis:6.2-alpine
+    container_name: kafka-manager-redis
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning --requirepass local_development_only
+
+  django_celery:
+    build: .
+    container_name: kafka-manager-celery
+    environment:
+      DATABASE_PASSWORD: local_development_only
+      DATABASE_USER: postgres
+      DATABASE_HOST: kafka-manager-db
+      DATABASE_NAME: postgres
+      DATABASE_PORT: 5432
+      LOCAL_ADMIN_USER: admin
+      LOCAL_ADMIN_PASS: admin
+      REDIS_HOST: kafka-manager-redis
+      REDIS_PASSWORD: local_development_only
+    command: celery -A kafka_manager_app worker -B -l INFO
+    volumes:
+      - .:/code
+    depends_on:
+      - kafka
+      - django_redis
+
   django_db:
     image: postgres:12
     restart: always
@@ -25,22 +53,20 @@ services:
       - 5432:5432
     environment:
       POSTGRES_PASSWORD: local_development_only
-      DJANGO_SECRET_KEY: abc
 
   djangoweb:
     build: .
     container_name: kafka-manager
-    extra_hosts:
-      - "apihost:127.0.0.1"
     environment:
       DATABASE_PASSWORD: local_development_only
       DATABASE_USER: postgres
       DATABASE_HOST: kafka-manager-db
       DATABASE_NAME: postgres
       DATABASE_PORT: 5432
-      DJANGO_SECRET_KEY: awe123
       LOCAL_ADMIN_USER: admin
       LOCAL_ADMIN_PASS: admin
+      REDIS_HOST: kafka-manager-redis
+      REDIS_PASSWORD: local_development_only
     command: >
       bash -c "sleep 2 && python3 manage.py migrate
       && echo \"from django.contrib.auth.models import User; import os; User.objects.filter(username=os.environ['LOCAL_ADMIN_USER']).exists() or User.objects.create_superuser(os.environ['LOCAL_ADMIN_USER'], '', os.environ['LOCAL_ADMIN_PASS'])\" | python3 manage.py shell
@@ -48,7 +74,8 @@ services:
     volumes:
       - .:/code
     ports:
-      - "127.0.0.1:8888:8888"
+      - 8888:8888
     depends_on:
       - django_db
       - kafka
+      - django_celery

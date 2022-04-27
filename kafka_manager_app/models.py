@@ -1,3 +1,4 @@
 from django.db import models
 
-# Create your models here.
+class KafkaBootstrapSevers(models.Model):
+    bootstrap_servers = models.CharField(max_length=30)

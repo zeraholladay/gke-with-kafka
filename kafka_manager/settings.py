@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 
 from pathlib import Path
 from os import getenv
+from sre_constants import GROUPREF_EXISTS
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -127,3 +128,17 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+CELERY_BROKER_URL = f"redis://:{getenv('REDIS_PASSWORD')}@{getenv('REDIS_HOST')}/0"
+CELERY_RESULT_BACKEND = f"redis://:{getenv('REDIS_PASSWORD')}@{getenv('REDIS_HOST')}/1"
+
+CELERY_BEAT_SCHEDULE = {
+      'find_topics_by_bootstrap_servers': {
+        'task': 'kafka_manager_app.celery.find_topics_by_bootstrap_servers',
+        'schedule': 30.0,
+        'args': (),
+        'options': {
+            'expires': 15.0,
+        },
+    },
+}

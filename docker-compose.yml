@@ -25,8 +25,17 @@ services:
       - '6379:6379'
     command: redis-server --save 20 1 --loglevel warning --requirepass local_development_only
 
+  django_db:
+    image: postgres:12
+    restart: always
+    container_name: kafka-manager-db
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: local_development_only
+
   django_celery:
-    build: .
+    build: ./kafka_manager_api
     container_name: kafka-manager-celery
     environment:
       DATABASE_PASSWORD: local_development_only
@@ -40,23 +49,15 @@ services:
       REDIS_PASSWORD: local_development_only
     command: celery -A kafka_manager_app worker -B -l INFO
     volumes:
-      - .:/code
+      - ./kafka_manager_api:/code
     depends_on:
       - kafka
+      - django_db
       - django_redis
 
-  django_db:
-    image: postgres:12
-    restart: always
-    container_name: kafka-manager-db
-    ports:
-      - 5432:5432
-    environment:
-      POSTGRES_PASSWORD: local_development_only
-
   djangoweb:
-    build: .
-    container_name: kafka-manager
+    build: ./kafka_manager_api
+    container_name: kafka-manager-api
     environment:
       DATABASE_PASSWORD: local_development_only
       DATABASE_USER: postgres
@@ -72,10 +73,22 @@ services:
       && echo \"from django.contrib.auth.models import User; import os; User.objects.filter(username=os.environ['LOCAL_ADMIN_USER']).exists() or User.objects.create_superuser(os.environ['LOCAL_ADMIN_USER'], '', os.environ['LOCAL_ADMIN_PASS'])\" | python3 manage.py shell
       && python3 manage.py runserver 0.0.0.0:8888"
     volumes:
-      - .:/code
+      - ./kafka_manager_api:/code
     ports:
       - 8888:8888
     depends_on:
-      - django_db
       - kafka
+      - django_db
       - django_celery
+
+  node:
+    build: ./kafka_manager_frontend
+    container_name: kafka-manager-frontend
+    environment:
+      DATABASE_PASSWORD: local_development_only
+    command: >
+      bash -c "npm run serve"
+    volumes:
+      - .:/code
+    ports:
+      - 8080:8080

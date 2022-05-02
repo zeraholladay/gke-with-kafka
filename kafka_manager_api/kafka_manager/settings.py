@@ -134,7 +134,7 @@ CELERY_RESULT_BACKEND = f"redis://:{getenv('REDIS_PASSWORD')}@{getenv('REDIS_HOS
 
 CELERY_BEAT_SCHEDULE = {
       'find_topics_by_bootstrap_servers': {
-        'task': 'kafka_manager_app.celery.find_topics_by_bootstrap_servers',
+        'task': 'kafka_manager_app.celery.discover_topics',
         'schedule': 30.0,
         'args': (),
         'options': {

@@ -1,6 +1,6 @@
 import os
 from unicodedata import name
-import kafka
+from kafka.errors import TopicAlreadyExistsError
 from kafka.admin import KafkaAdminClient, NewTopic
 from celery import Celery
 from celery.utils.log import get_task_logger
@@ -22,24 +22,18 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 app.autodiscover_tasks()
 
 @app.task(bind=True)
-def find_topics_by_bootstrap_servers(self):
-    from .models import KafkaBootstrapSevers, KafkaTopics
+def discover_topics(self):
+    from .models import KafkaBootstrapSever, KafkaTopic
 
-    for bootstrap_servers in KafkaBootstrapSevers.objects.all():
-        server = bootstrap_servers.bootstrap_servers
-        consumer = kafka.KafkaConsumer(bootstrap_servers=[server])
-        for topic_name in consumer.topics():
-            kafka_topic, created_boolean = KafkaTopics.objects.get_or_create(topic=topic_name, bootstrap_servers=bootstrap_servers)
-
-@app.task
-def create_topic(pk):
-    from .models import KafkaBootstrapSevers, KafkaTopics
-    new_kafka_topic_model = KafkaTopics.objects.get(pk=pk)
-
-    admin_client = KafkaAdminClient(
-        bootstrap_servers=new_kafka_topic_model.bootstrap_servers.bootstrap_servers
-    )
-
-    topic_list = []
-    topic_list.append(NewTopic(name=new_kafka_topic_model.topic, num_partitions=1, replication_factor=1))
-    admin_client.create_topics(new_topics=topic_list, validate_only=False)
+    for kafka_bootstrap_server in KafkaBootstrapSever.objects.all():
+        admin_client = KafkaAdminClient(bootstrap_servers=kafka_bootstrap_server.server)
+        topic_descriptions = [ topic for topic in admin_client.describe_topics() if topic['is_internal'] == False ]
+        for topic_description in topic_descriptions:
+            kafka_topic_obj, created_boolean = KafkaTopic.objects.get_or_create(name=topic_description['topic'], 
+                                                                                bootstrap_server=kafka_bootstrap_server)
+            if created_boolean:
+                kafka_topic_obj.num_partitions = len(topic_description['partitions'])
+                kafka_topic_obj.replication_factor = 1 #XXX: FIX ME!!! [ replicas for partion in topic_description['partitions'] for replicas in partion['replicas'] ] --> [0,0] or [0] (needs distinct set)
+                kafka_topic_obj.save()
+            else:
+                pass #XXX: Add logic to validate actual description compared to model

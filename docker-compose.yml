@@ -47,7 +47,7 @@ services:
       LOCAL_ADMIN_PASS: admin
       REDIS_HOST: kafka-manager-redis
       REDIS_PASSWORD: local_development_only
-    command: celery -A kafka_manager_app worker -B -l INFO
+    command: watchmedo auto-restart --directory=./ --pattern=*.py --recursive -- celery -A kafka_manager_app worker -B -l INFO
     volumes:
       - ./kafka_manager_api:/kafka_manager_api
     depends_on:

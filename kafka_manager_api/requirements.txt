@@ -9,8 +9,12 @@ click-plugins==1.1.1
 click-repl==0.2.0
 Deprecated==1.2.13
 Django==4.0.4
+django-filter==21.1
+djangorestframework==3.13.1
+importlib-metadata==4.11.3
 kafka-python==2.0.2
 kombu==5.2.4
+Markdown==3.3.6
 packaging==21.3
 prompt-toolkit==3.0.29
 psycopg2-binary==2.9.3
@@ -19,7 +23,10 @@ pytz==2022.1
 redis==4.2.2
 six==1.16.0
 sqlparse==0.4.2
+tblib==1.7.0
 tzdata==2022.1
 vine==5.0.0
+watchdog==2.1.7
 wcwidth==0.2.5
 wrapt==1.14.0
+zipp==3.8.0

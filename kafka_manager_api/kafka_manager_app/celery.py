@@ -1,7 +1,5 @@
 import os
-from unicodedata import name
-from kafka.errors import TopicAlreadyExistsError
-from kafka.admin import KafkaAdminClient, NewTopic
+from kafka.admin import KafkaAdminClient
 from celery import Celery
 from celery.utils.log import get_task_logger
 
@@ -27,13 +25,14 @@ def discover_topics(self):
 
     for kafka_bootstrap_server in KafkaBootstrapSever.objects.all():
         admin_client = KafkaAdminClient(bootstrap_servers=kafka_bootstrap_server.server)
-        topic_descriptions = [ topic for topic in admin_client.describe_topics() if topic['is_internal'] == False ]
+        topic_descriptions = [ topic for topic in admin_client.describe_topics()
+            if topic['is_internal'] == False ]
         for topic_description in topic_descriptions:
-            kafka_topic_obj, created_boolean = KafkaTopic.objects.get_or_create(name=topic_description['topic'], 
-                                                                                bootstrap_server=kafka_bootstrap_server)
-            if created_boolean:
-                kafka_topic_obj.num_partitions = len(topic_description['partitions'])
-                kafka_topic_obj.replication_factor = 1 #XXX: FIX ME!!! [ replicas for partion in topic_description['partitions'] for replicas in partion['replicas'] ] --> [0,0] or [0] (needs distinct set)
-                kafka_topic_obj.save()
-            else:
-                pass #XXX: Add logic to validate actual description compared to model
+            kafka_num_partitions = len(topic_description['partitions'])
+            kafka_replication_factor = len(set([ replicas for partion in topic_description['partitions'] for replicas in partion['replicas'] ])) #XXX: Fix me
+            KafkaTopic.get_or_create_no_signal(
+                name=topic_description['topic'],
+                bootstrap_server=kafka_bootstrap_server,
+                num_partitions=kafka_num_partitions,
+                replication_factor=kafka_replication_factor,
+            )

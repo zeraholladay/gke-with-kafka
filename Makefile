@@ -8,7 +8,7 @@ force_clean:
 	docker stop kafka-manager-api kafka-manager-db kafka kafka-zk | xargs docker rm
 
 test:
-	docker exec -it kafka-manager-api bash -c "cd /kafka_manager_api && coverage run --source='.' manage.py test --parallel && coverage combine && coverage report || rm -f .coverage.*"
+	docker exec -it kafka-manager-api bash -c "cd /kafka_manager_api && python3 manage.py test --parallel"
 
 makemigrations:
 	docker exec -it kafka-manager-api bash -c "cd /kafka_manager_api && python3 manage.py makemigrations kafka_manager_app"

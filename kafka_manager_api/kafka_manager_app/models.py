@@ -37,10 +37,9 @@ class KafkaTopic(models.Model):
     def _kafka_create_topic(self):
         admin_client = KafkaAdminClient(bootstrap_servers=self.bootstrap_server.server)
         try:
-            result = admin_client.create_topics(new_topics=[ self._get_kafka_topic() ], validate_only=False)
+            return admin_client.create_topics(new_topics=[ self._get_kafka_topic() ], validate_only=False)
         finally:
             admin_client.close()
-        return result
 
     def _kakfa_delete_topic(self):
         admin_client = KafkaAdminClient(bootstrap_servers=self.bootstrap_server.server)

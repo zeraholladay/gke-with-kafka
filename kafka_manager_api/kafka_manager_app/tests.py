@@ -58,6 +58,10 @@ class KafkaTopicACLTestCase(TestCase):
         self.server = KafkaBootstrapSever.objects.create(server="kafka")
         self.topic = KafkaTopic.objects.create(name=self.topic_name, bootstrap_server=self.server)
 
+    def tearDown(self) -> None:
+        self.topic.delete()
+        return super().tearDown()
+
     def test___str__(self):
         kafka_acl = KafkaTopicACL(principal="User:test",
             host="*",

@@ -9,7 +9,7 @@ class KafkaBootstrapSeverSerializer(serializers.HyperlinkedModelSerializer):
 class KafkaTopicSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = KafkaTopic
-        fields = ['pk', 'name', 'num_partitions', 'replication_factor', 'bootstrap_server', 'category_name']
+        fields = ['pk', 'name', 'num_partitions', 'replication_factor', 'bootstrap_server' ]
 
 class KafkaTopicACLSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:

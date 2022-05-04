@@ -21,10 +21,10 @@ app.autodiscover_tasks()
 
 @app.task(bind=True)
 def discover_topics(self):
-    from .models import KafkaBootstrapSever, KafkaTopic
+    from .models import KafkaCluster, KafkaTopic
 
-    for kafka_bootstrap_server in KafkaBootstrapSever.objects.all():
-        admin_client = KafkaAdminClient(bootstrap_servers=kafka_bootstrap_server.server)
+    for kafka_cluster in KafkaCluster.objects.all():
+        admin_client = kafka_cluster.get_admin_client()
         topic_descriptions = [ topic for topic in admin_client.describe_topics()
             if topic['is_internal'] == False ]
         for topic_description in topic_descriptions:
@@ -32,7 +32,7 @@ def discover_topics(self):
             kafka_replication_factor = len(set([ replicas for partion in topic_description['partitions'] for replicas in partion['replicas'] ])) #XXX: Fix me
             KafkaTopic.get_or_create_no_signal(
                 name=topic_description['topic'],
-                bootstrap_server=kafka_bootstrap_server,
+                cluster=kafka_cluster,
                 num_partitions=kafka_num_partitions,
                 replication_factor=kafka_replication_factor,
             )

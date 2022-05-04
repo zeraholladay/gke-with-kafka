@@ -3,12 +3,12 @@ from rest_framework import viewsets
 from rest_framework import permissions
 from .serializers import *
 
-class KafkaBootstrapSeverViewSet(viewsets.ModelViewSet):
+class KafkaClusterViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows bootstrap servers to be viewed or created.
     """
-    queryset = KafkaBootstrapSever.objects.all()
-    serializer_class = KafkaBootstrapSeverSerializer
+    queryset = KafkaCluster.objects.all()
+    serializer_class = KafkaClusterSerializer
     permission_classes = [permissions.IsAuthenticated]
     http_method_names = [ 'get', 'post' ]
 

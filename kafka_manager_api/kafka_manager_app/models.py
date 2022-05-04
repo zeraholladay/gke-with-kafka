@@ -1,29 +1,34 @@
-from unittest import result
+from email.policy import default
 from django.db import models
 from django.db.models.signals import pre_save, pre_delete
 from django.dispatch import receiver
+
 from kafka.admin import KafkaAdminClient, NewTopic
 from kafka.admin import ACL, ACLFilter, ResourceType, ACLOperation, ACLPermissionType, ResourcePattern
-from kafka.errors import TopicAlreadyExistsError, UnknownTopicOrPartitionError
+from kafka.errors import UnknownTopicOrPartitionError
 
 import logging
 logger = logging.getLogger(__name__)
 
-class KafkaBootstrapSever(models.Model):
-    server = models.CharField(max_length=100, unique=True)
+class KafkaCluster(models.Model):
+    bootstrap_servers = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
-        return self.server
+        return self.bootstrap_servers
+
+    def get_admin_client(self):
+        sanitized = [ s.strip() for s in self.bootstrap_servers.split(',') ]
+        return KafkaAdminClient(bootstrap_servers=sanitized)
 
 class KafkaTopic(models.Model):
     name = models.CharField(max_length=100)
-    num_partitions = models.PositiveIntegerField(default=1)
-    replication_factor = models.PositiveIntegerField(default=1)
-    bootstrap_server = models.ForeignKey(KafkaBootstrapSever, on_delete=models.CASCADE)
+    num_partitions = models.PositiveIntegerField(default=2)
+    replication_factor = models.PositiveIntegerField(default=2)
+    cluster = models.ForeignKey(KafkaCluster, on_delete=models.CASCADE)
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['name', 'bootstrap_server'], name='unique_name_per_bootstrap_server'),
+            models.UniqueConstraint(fields=['name', 'cluster'], name='unique_name_per_cluster'),
         ]
 
     def __str__(self):
@@ -35,18 +40,18 @@ class KafkaTopic(models.Model):
             replication_factor=self.replication_factor)
 
     def _kafka_create_topic(self):
-        admin_client = KafkaAdminClient(bootstrap_servers=self.bootstrap_server.server)
+        admin_client = self.cluster.get_admin_client()
         try:
             return admin_client.create_topics(new_topics=[ self._get_kafka_topic() ], validate_only=False)
         finally:
             admin_client.close()
 
     def _kakfa_delete_topic(self):
-        admin_client = KafkaAdminClient(bootstrap_servers=self.bootstrap_server.server)
+        admin_client = self.cluster.get_admin_client()
         try:
             return admin_client.delete_topics(topics=[ self.name ])
         except UnknownTopicOrPartitionError:
-            logger.info(f"Topic with name '{self.name}' does not exist on server '{self.bootstrap_server.server}'")
+            logger.info(f"Topic with name '{self.name}' does not exist on server '{self.cluster.bootstrap_servers}'")
             return None
         finally:
             admin_client.close()
@@ -59,7 +64,7 @@ class KafkaTopic(models.Model):
     def get_or_create_no_signal(*args, **kwargs):
         try:
             return KafkaTopic.objects.get(
-                **{ key: kwargs.get(key, None) for key in ('name', 'bootstrap_server') }
+                **{ key: kwargs.get(key, None) for key in ('name', 'cluster') }
             )
         except KafkaTopic.DoesNotExist:
             new_kafka_topic_obj = KafkaTopic(*args, **kwargs)
@@ -127,14 +132,14 @@ class KafkaTopicACL(models.Model):
         )
 
     def _kakfa_create_acl(self):
-        admin_client = KafkaAdminClient(bootstrap_servers=self.topic.bootstrap_server.server)
+        admin_client = self.topic.cluster.get_admin_client()
         try:
             return admin_client.create_acls([self._get_acl()])
         finally:
             admin_client.close()
 
     def _kafka_delete_acl(self):
-        admin_client = KafkaAdminClient(bootstrap_servers=self.topic.bootstrap_server.server)
+        admin_client = self.topic.cluster.get_admin_client()
         try:
             return admin_client.delete_acls([self._get_acl_filter()])
         finally:

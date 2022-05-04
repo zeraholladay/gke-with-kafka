@@ -19,9 +19,9 @@ from django.urls import include, path
 from kafka_manager_app import views
 
 router = routers.DefaultRouter()
-router.register(r'bootstrap_servers', views.KafkaBootstrapSeverViewSet)
-router.register(r'topics', views.KafkaTopicViewSet)
-router.register(r'topic_acls', views.KafkaTopicACLViewSet)
+router.register(r'cluster', views.KafkaClusterViewSet)
+router.register(r'topic', views.KafkaTopicViewSet)
+router.register(r'topic_acl', views.KafkaTopicACLViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),

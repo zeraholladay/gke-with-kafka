@@ -1,7 +1,6 @@
 from .models import *
 from rest_framework import serializers
 
-
 class KafkaBootstrapSeverSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = KafkaBootstrapSever
@@ -10,7 +9,7 @@ class KafkaBootstrapSeverSerializer(serializers.HyperlinkedModelSerializer):
 class KafkaTopicSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = KafkaTopic
-        fields = ['pk', 'name', 'num_partitions', 'replication_factor', 'bootstrap_server']
+        fields = ['pk', 'name', 'num_partitions', 'replication_factor', 'bootstrap_server', 'category_name']
 
 class KafkaTopicACLSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:

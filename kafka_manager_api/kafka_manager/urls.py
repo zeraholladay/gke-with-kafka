@@ -20,8 +20,8 @@ from kafka_manager_app import views
 
 router = routers.DefaultRouter()
 router.register(r'bootstrap_servers', views.KafkaBootstrapSeverViewSet)
-router.register(r'topic', views.KafkaTopicViewSet)
-router.register(r'topic_acl', views.KafkaTopicACLViewSet)
+router.register(r'topics', views.KafkaTopicViewSet)
+router.register(r'topic_acls', views.KafkaTopicACLViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),

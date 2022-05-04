@@ -5,12 +5,12 @@ from .serializers import *
 
 class KafkaBootstrapSeverViewSet(viewsets.ModelViewSet):
     """
-    API endpoint that allows bootstrap servers to be viewed, deleted, or created.
+    API endpoint that allows bootstrap servers to be viewed or created.
     """
     queryset = KafkaBootstrapSever.objects.all()
     serializer_class = KafkaBootstrapSeverSerializer
     permission_classes = [permissions.IsAuthenticated]
-    http_method_names = [ 'get', 'post', 'delete']
+    http_method_names = [ 'get', 'post' ]
 
 class KafkaTopicViewSet(viewsets.ModelViewSet):
     """

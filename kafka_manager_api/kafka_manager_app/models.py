@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 class KafkaCluster(models.Model):
     bootstrap_servers = models.CharField(max_length=100, unique=True)
+    description = models.JSONField(null=dict)
 
     def __str__(self):
         return self.bootstrap_servers

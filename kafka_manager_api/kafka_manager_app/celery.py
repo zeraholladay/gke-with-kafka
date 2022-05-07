@@ -25,6 +25,9 @@ def discover_topics(self):
 
     for kafka_cluster in KafkaCluster.objects.all():
         admin_client = kafka_cluster.get_admin_client()
+        kafka_cluster.description = admin_client.describe_cluster()
+        kafka_cluster.save()
+
         topic_descriptions = [ topic for topic in admin_client.describe_topics()
             if topic['is_internal'] == False ]
         for topic_description in topic_descriptions:

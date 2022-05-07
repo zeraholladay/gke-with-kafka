@@ -1,6 +1,7 @@
 from .models import *
 from rest_framework import viewsets
 from rest_framework import permissions
+from rest_framework import generics
 from .serializers import *
 
 class KafkaClusterViewSet(viewsets.ModelViewSet):
@@ -21,6 +22,16 @@ class KafkaTopicViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     http_method_names = [ 'get', 'post', 'delete']
 
+class KafkaTopicList(generics.ListAPIView):
+    serializer_class = KafkaTopicSerializer
+
+    def get_queryset(self):
+        """
+        Optionally restricts the returned purchases to a given cluser id,
+        by filtering against a `cluster_id` query parameter in the URL.
+        """
+        cluster_id = self.kwargs['id']
+        return KafkaTopic.objects.filter(cluster__pk=cluster_id)
 
 class KafkaTopicACLViewSet(viewsets.ModelViewSet):
     """

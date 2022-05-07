@@ -15,15 +15,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from rest_framework import routers
-from django.urls import include, path
+from django.urls import include, path, re_path
 from kafka_manager_app import views
 
-router = routers.DefaultRouter()
+router = routers.DefaultRouter(trailing_slash=False)
 router.register(r'cluster', views.KafkaClusterViewSet)
 router.register(r'topic', views.KafkaTopicViewSet)
 router.register(r'topic_acl', views.KafkaTopicACLViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include(router.urls)),
+    path('api/', include(router.urls)),
+    re_path("api/topics-on-cluster/(?P<id>.+)$", views.KafkaTopicList.as_view()),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework'))]

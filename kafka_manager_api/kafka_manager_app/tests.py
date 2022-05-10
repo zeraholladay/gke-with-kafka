@@ -1,8 +1,42 @@
+from urllib import request
 from uuid import uuid4
 from django.test import TestCase
 from django.db.utils import IntegrityError
 from kafka.errors import TopicAlreadyExistsError
 from .models import *
+
+BOOTSTRAP_SERVERS = "kafka-1,kafka-2,kafka-3"
+
+from rest_framework.test import APIClient
+from django.contrib.auth.models import User
+
+class APIClusterTestCase(TestCase):
+    def setUp(self):
+        self.username, self.password = "admin", "admin"
+        self.user = User.objects.create_user(username=self.username, password=self.password)
+        self.cluster = KafkaCluster.objects.create(bootstrap_servers=BOOTSTRAP_SERVERS)
+        self.client = APIClient()
+        self.client.login(username=self.username, password=self.password)
+
+    def tearDown(self):
+        self.client.logout()
+        return super().tearDown()
+
+    def test_cluster_get_all(self):
+        request = self.client.get(f"/api/cluster")
+        self.assertEqual(request.status_code, 200)
+
+    def test_cluster_get_one(self):
+        request = self.client.get(f"/api/cluster/{self.cluster.pk}")
+        self.assertEqual(request.status_code, 200)
+
+    def test_cluster_post(self):
+        request = self.client.post('/api/cluster', {'bootstrap_servers': 'kafka-1,kafka-2'}, format='json')
+        self.assertEqual(request.status_code, 201)
+
+    # def test_cluster_delete(self):
+    #     request = self.client.delete(f"/api/cluster/{self.cluster.pk}")
+    #     self.assertEqual(request.status_code, 200)
 
 BOOTSTRAP_SERVERS = "kafka-1,kafka-2,kafka-3"
 
@@ -21,9 +55,9 @@ class KafkaTopicTestCase(TestCase):
     def setUp(self):
         self.topic_name = unique_topic_name()
         self.cluster = KafkaCluster.objects.create(bootstrap_servers=BOOTSTRAP_SERVERS)
-        self.topic = KafkaTopic.objects.create(name=self.topic_name, cluster=self.cluster)
+        self.topic = KafkaTopic.objects.create(name=self.topic_name, cluster=self.cluster, num_partitions=1, replication_factor=1)
 
-    def tearDown(self) -> None:
+    def tearDown(self):
         self.topic.delete()
         return super().tearDown()
 
@@ -45,10 +79,10 @@ class KafkaTopicTestCase(TestCase):
         self.assertEqual(KafkaTopic.objects.all().count(), 1)
 
     def test_get_or_create_no_signal(self):
-        topic = KafkaTopic.get_or_create_no_signal(name=self.topic_name, cluster=self.cluster)
+        topic, created_boolean = KafkaTopic.get_or_create_no_signal(name=self.topic_name, cluster=self.cluster)
         self.assertEqual(topic, self.topic)
         new_topic_name = unique_topic_name()
-        new_topic = KafkaTopic.get_or_create_no_signal(name=new_topic_name, cluster=self.cluster)
+        new_topic, created_boolean = KafkaTopic.get_or_create_no_signal(name=new_topic_name, cluster=self.cluster)
         admin_client = self.cluster.get_admin_client()
         self.assertTrue(new_topic_name not in [ topic['topic'] for topic in admin_client.describe_topics()])
         admin_client.close()

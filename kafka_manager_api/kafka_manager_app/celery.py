@@ -1,4 +1,4 @@
-import os
+import os, json
 from kafka.admin import KafkaAdminClient
 from celery import Celery
 from celery.utils.log import get_task_logger
@@ -38,4 +38,5 @@ def discover_topics(self):
                 cluster=kafka_cluster,
                 num_partitions=kafka_num_partitions,
                 replication_factor=kafka_replication_factor,
+                description=json.dumps(topic_description),
             )

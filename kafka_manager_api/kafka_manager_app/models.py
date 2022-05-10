@@ -1,4 +1,3 @@
-from email.policy import default
 from django.db import models
 from django.db.models.signals import pre_save, pre_delete
 from django.dispatch import receiver
@@ -7,12 +6,15 @@ from kafka.admin import KafkaAdminClient, NewTopic
 from kafka.admin import ACL, ACLFilter, ResourceType, ACLOperation, ACLPermissionType, ResourcePattern
 from kafka.errors import UnknownTopicOrPartitionError
 
+import json
 import logging
 logger = logging.getLogger(__name__)
 
 class KafkaCluster(models.Model):
     bootstrap_servers = models.CharField(max_length=100, unique=True)
-    description = models.JSONField(null=dict)
+    default_replicaton_factor = models.PositiveIntegerField(default=2)
+    default_num_partitions = models.PositiveIntegerField(default=1)
+    description = models.JSONField(null=dict, blank=True)
 
     def __str__(self):
         return self.bootstrap_servers
@@ -23,14 +25,35 @@ class KafkaCluster(models.Model):
 
 class KafkaTopic(models.Model):
     name = models.CharField(max_length=100)
-    num_partitions = models.PositiveIntegerField(default=2)
-    replication_factor = models.PositiveIntegerField(default=2)
     cluster = models.ForeignKey(KafkaCluster, on_delete=models.CASCADE)
+    description = models.JSONField(null=dict, blank=True)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=['name', 'cluster'], name='unique_name_per_cluster'),
         ]
+
+    @property
+    def num_partitions(self):
+        if hasattr(self, '_num_partitions'):
+            return self._num_partitions
+        else:
+            return self.cluster.default_num_partitions
+
+    @num_partitions.setter
+    def num_partitions(self, value):
+        self._num_partitions = value
+
+    @property
+    def replication_factor(self):
+        if hasattr(self, '_replication_factor'):
+            return self._replication_factor
+        else:
+            return self.cluster.default_replicaton_factor
+
+    @replication_factor.setter
+    def replication_factor(self, value):
+        self._replication_factor = value
 
     def __str__(self):
         return self.name
@@ -43,7 +66,9 @@ class KafkaTopic(models.Model):
     def _kafka_create_topic(self):
         admin_client = self.cluster.get_admin_client()
         try:
-            return admin_client.create_topics(new_topics=[ self._get_kafka_topic() ], validate_only=False)
+            admin_client.create_topics(new_topics=[ self._get_kafka_topic() ], validate_only=False)
+            description = admin_client.describe_topics(topics=[self.name])
+            self.description = json.dumps(description)
         finally:
             admin_client.close()
 
@@ -66,10 +91,10 @@ class KafkaTopic(models.Model):
         try:
             return KafkaTopic.objects.get(
                 **{ key: kwargs.get(key, None) for key in ('name', 'cluster') }
-            )
+            ), False
         except KafkaTopic.DoesNotExist:
             new_kafka_topic_obj = KafkaTopic(*args, **kwargs)
-            return KafkaTopic.objects.bulk_create([new_kafka_topic_obj])[0]
+            return KafkaTopic.objects.bulk_create([new_kafka_topic_obj])[0], True
 
 @receiver(pre_save, sender=KafkaTopic)
 def kafka_create_topic(sender, instance, *args, **kwargs):
